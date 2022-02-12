@@ -1,14 +1,14 @@
 type Pos = (Int, Int)
-type Board = [(Pos, Int)]
+type Board = [[Int]]
 
 row = 30
 col = 50
 
---width :: [[a]] -> Int
---width = length
+width :: [[a]] -> Int
+width = length
 
---height :: [[a]] -> Int
---height = length . (!! 0)
+height :: [[a]] -> Int
+height = length . (!! 0)
 
 bData = "\
     \..................................................\
@@ -42,20 +42,14 @@ bData = "\
     \..................................................\
     \.................................................."
 
-firstBoard::Board
-firstBoard = zip [(x, y) | x <- [1..row], y <- [1..col]] (map trans bData)
-    where trans '.' = 0
-          trans 'X' = 1
-          trans  _  = 0
-
 inBoard :: Board -> Int -> Int -> Bool
-inBoard b x y = (x `elem` [0..row]) && ( y `elem` [0..col])
+inBoard b x y = (x `elem` [1..(width b)]) && ( y `elem` [1..(height b)])
 
 arounds::Board -> Int -> Int -> [Pos]
 arounds b x y = filter (uncurry $ inBoard b) [(x + x', y + y') | x' <- [-1..1], y' <- [-1..1], x' /= 0 || x' -y' /= 0]
 
 isAlive :: Board -> Pos -> Bool
-isAlive b (x, y) = b !! ((row * x) + y) == ((x, y), 1)
+isAlive b (x, y) = b !! x !! y == 1
 
 liveNeighbs ::Board -> Pos -> Int
 liveNeighbs b (x, y) = isAlive2 (arounds b x y) where
@@ -66,9 +60,3 @@ liveNeighbs b (x, y) = isAlive2 (arounds b x y) where
                             0 + isAlive2 xs
 
 gameOfLife :: Board -> Board
-gameOfLife b = map nextGen b
-    where nextGen ((x, y), cellState) = ((x, y), newState)
-            where newState = if (cellState, liveNeighbs b (x,y)) `elem` alive 
-                                then 1 
-                             else 0
-                  alive = [(0, 3), (1, 2), (1, 3)]
