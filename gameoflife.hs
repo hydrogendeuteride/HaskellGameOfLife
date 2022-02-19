@@ -75,7 +75,6 @@ renderArea b = Set.union b $ unions [neighbs x | x <-  toList b]
 nextGen :: Board -> Board
 nextGen b = Set.filter (cell b) (renderArea b)
 
---heavily referenced: https://gist.github.com/ihabunek/81e7da0c705689fe743a
 --IO
 seqn :: [IO a] -> IO ()
 seqn [] = return ()
