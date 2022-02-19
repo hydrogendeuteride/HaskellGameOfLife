@@ -1,3 +1,5 @@
+--import Data.Vector.Storable as Vec
+
 type Pos = (Int, Int)
 type Board = [[Int]]
 
@@ -51,12 +53,16 @@ arounds b x y = filter (uncurry $ inBoard b) [(x + x', y + y') | x' <- [-1..1], 
 isAlive :: Board -> Pos -> Bool
 isAlive b (x, y) = b !! x !! y == 1
 
-liveNeighbs ::Board -> Pos -> Int
+liveNeighbs ::Board -> Pos -> [Pos]
 liveNeighbs b (x, y) = isAlive2 (arounds b x y) where
-    isAlive2 [] = 0
+    isAlive2 [] = []
     isAlive2 (x:xs) = if isAlive b x
-                            then 1 + isAlive2 xs
+                        then x : isAlive2 xs
                         else
-                            0 + isAlive2 xs
+                            isAlive2 xs
+
+liveCell :: Board -> [Pos]
+liveCell = 
 
 gameOfLife :: Board -> Board
+gameOfLife =
