@@ -1,74 +1,57 @@
-type Pos = (Int, Int)
-type Board = [(Pos, Int)]
+import Data.Set as Set
 
 row = 30
 col = 50
 
---width :: [[a]] -> Int
---width = length
-
---height :: [[a]] -> Int
---height = length . (!! 0)
-
-bData = "\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \...............................X..................\
-    \.............................X.X..................\
-    \...................XX......XX............XX.......\
-    \..................X...X....XX............XX.......\
-    \.......XX........X.....X...XX.....................\
-    \.......XX........X...X.XX....X.X..................\
-    \.................X.....X.......X..................\
-    \..................X...X...........................\
-    \...................XX.............................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \..................................................\
-    \.................................................."
-
-firstBoard::Board
-firstBoard = zip [(x, y) | x <- [1..row], y <- [1..col]] (map trans bData)
-    where trans '.' = 0
-          trans 'X' = 1
-          trans  _  = 0
-
-inBoard :: Board -> Int -> Int -> Bool
-inBoard b x y = (x `elem` [0..row]) && ( y `elem` [0..col])
-
-arounds::Board -> Int -> Int -> [Pos]
-arounds b x y = filter (uncurry $ inBoard b) [(x + x', y + y') | x' <- [-1..1], y' <- [-1..1], x' /= 0 || x' -y' /= 0]
+type Pos = (Int, Int)
+type Board = Set Pos
 
 isAlive :: Board -> Pos -> Bool
-isAlive b (x, y) = b !! ((row * x) + y) == ((x, y), 1)
+isAlive b p = member p b
 
-liveNeighbs ::Board -> Pos -> Int
-liveNeighbs b (x, y) = isAlive2 (arounds b x y) where
-    isAlive2 [] = 0
-    isAlive2 (x:xs) = if isAlive b x
-                            then 1 + isAlive2 xs
-                        else
-                            0 + isAlive2 xs
+inBoard :: Int -> Int -> Bool
+inBoard x y = (x `elem` [0..row]) && ( y `elem` [0..col])
 
-gameOfLife :: Board -> Board
-gameOfLife b = map nextGen b
-    where nextGen ((x, y), cellState) = ((x, y), newState)
-            where newState = if (cellState, liveNeighbs b (x,y)) `elem` alive 
-                                then 1 
-                             else 0
-                  alive = [(0, 3), (1, 2), (1, 3)]
+neighbs::Pos -> Board
+neighbs (x, y) = Set.fromList(Prelude.filter (uncurry inBoard)
+    [(x + x', y + y') | x' <- [-1..1], y' <- [-1..1], x' /= 0 || x' -y' /= 0])
+
+liveNeighbs :: Board -> Pos -> Int
+liveNeighbs b p = Set.size (Set.filter (isAlive b) (neighbs p))
+
+cell::Board -> Pos -> Bool
+cell b p
+    | isAlive b p = liveNeighbs b p `elem` [2, 3]
+    | otherwise = liveNeighbs b p == 3
+
+renderArea :: Board -> Board
+renderArea b = union b $ unions [neighbs x | x <-  toList b]
+
+nextGen :: Board -> Board
+nextGen b = Set.filter (cell b) (renderArea b)
+
+--heavily referenced: https://gist.github.com/ihabunek/81e7da0c705689fe743a
+--IO
+seqn :: [IO a] -> IO ()
+seqn [] = return ()
+seqn (x:xs) = do x
+                 seqn xs
+
+goto :: Pos -> IO ()
+goto (x, y) = putStr ("\ESC["  ++ show y ++ ";" ++ show x ++ "H")          
+
+writeAt :: Pos -> String -> IO ()
+writeAt p xs = do goto p
+                  putStr xs
+
+cls :: IO ()
+cls = putStr "\ESC[2J"
+
+showCells :: Board -> IO ()
+showCells b = seqn [writeAt p "O" | p <- toList b]
+
+life :: Board -> IO()
+life b = do
+    cls
+    showCells b
+    life (nextGen b)
