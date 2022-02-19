@@ -97,3 +97,5 @@ life b = do
     cls
     showCells b
     life (nextGen b)
+
+    --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
