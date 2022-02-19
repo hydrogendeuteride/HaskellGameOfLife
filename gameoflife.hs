@@ -1,4 +1,5 @@
 import Data.Set as Set
+import Data.List
 
 row = 30
 col = 50
@@ -37,12 +38,14 @@ bData = "\
     \..................................................\
     \.................................................."
 
-firstBoard::[(Pos, Int)]
-firstBoard = zip [(x, y) | x <- [1..row], y <- [1..col]] (Prelude.map trans bData)
-    where trans '.' = 0
-          trans 'X' = 1
-          trans  _  = 0
+pos1D :: [Char] -> [Int]
+pos1D = elemIndices 'X'
 
+pos1DT2D :: [Int] -> [Pos]
+pos1DT2D zs = [(z `div` col, z `mod` col) | z <- zs]
+
+pos2Set :: [Pos] -> Board
+pos2Set = Set.fromList 
 
 -- ////////////////////////////////////////////////////////////////////////////
 type Pos = (Int, Int)
@@ -67,7 +70,7 @@ cell b p
     | otherwise = liveNeighbs b p == 3
 
 renderArea :: Board -> Board
-renderArea b = union b $ unions [neighbs x | x <-  toList b]
+renderArea b = Set.union b $ unions [neighbs x | x <-  toList b]
 
 nextGen :: Board -> Board
 nextGen b = Set.filter (cell b) (renderArea b)
@@ -80,7 +83,7 @@ seqn (x:xs) = do x
                  seqn xs
 
 goto :: Pos -> IO ()
-goto (x, y) = putStr ("\ESC["  ++ show y ++ ";" ++ show x ++ "H")          
+goto (x, y) = putStr ("\ESC["  ++ show y ++ ";" ++ show x ++ "H")
 
 writeAt :: Pos -> String -> IO ()
 writeAt p xs = do goto p
@@ -97,5 +100,3 @@ life b = do
     cls
     showCells b
     life (nextGen b)
-
-    --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
